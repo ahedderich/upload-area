@@ -7,4 +7,4 @@ Features
 * copy images by clipboard
 
 Not fully tested in different browsers.
-Not for productive use (yet).
+**Not for productive use** (yet).
