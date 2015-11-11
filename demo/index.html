@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+	<title>upload area demo</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+
+	<script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+	<link rel="import" href="../upload-area.html">
+	<link rel="import" href="../../iron-form/iron-form.html">
+
+	<style is="custom-style">
+		html, body {
+			background: #7083a3;
+			font-family: 'Roboto', 'Noto', sans-serif;
+		}
+		upload-area {
+			width: 500px;
+			height: 200px;
+			background: #ffffff;
+		}
+	</style>
+</head>
+<body>
+	<span id="browser-sync-binding"></span>
+	<div>
+		<h4>Single file upload</h4>
+		<upload-area class="area1" action="upload"></upload-area>
+	</div>
+	<div>
+		<h4>Multiple file upload</h4>
+		<upload-area class="area2" action="upload" name="foo" multiple></upload-area>
+	</div>
+	<div>
+		<h4>Multiple file upload in iron-form context</h4>
+
+		<form is="iron-form" action="upload" method="post">
+			<upload-area class="area3" name="foo" multiple></upload-area>
+			<button type="submit">Send</button>
+		</form>
+	</div>
+	<script>
+		document.querySelector('form').addEventListener('iron-form-presubmit',function(e){
+			var data = e.target.request.body;
+			var formdata = new FormData();
+			for (var key in data) {
+				if (data.hasOwnProperty(key)) {
+					var value = data[key];
+					if(Object.prototype.toString.call( value ) === '[object Array]'){
+						for (var key2 in value) {
+							formdata.append(key + '[' + key2 + ']', value[key2]);
+						}
+					}else{
+						formdata.append(key, value);
+					}
+				}
+			}
+			e.target.request.contentType = undefined;
+			e.target.request.body = formdata;
+		});
+	</script>
+</body>
+</html>

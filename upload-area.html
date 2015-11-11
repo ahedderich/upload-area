@@ -1,0 +1,215 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-input/iron-input.html">
+<link rel="import" href="../iron-form-element-behavior/iron-form-element-behavior.html">
+<link rel="import" href="../paper-input/paper-input-behavior.html">
+<link rel="import" href="../paper-input/paper-input-container.html">
+<link rel="import" href="./upload-image.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
+<dom-module id="upload-area">
+	<template>
+		<style>
+			:host {
+				display: inline-block;
+				position: relative;
+				min-width: 6em;
+				min-height: 1em;
+			}
+			:host([focused]) input#focusinput {
+				border: red 5px solid;
+			}
+			input#focusinput {
+				text-indent: -9999px;
+				position: absolute;
+				width: 100%;
+				left: 0;
+				top: 0;
+				right: 0;
+				bottom: 0;
+				border: none;
+				background: transparent;
+			}
+			input#focusinput:hover {
+				cursor: pointer;
+			}
+			input#fileinput {
+				display: none;
+			}
+			.images {
+				display: flex;
+				position: absolute;
+				left: 0;
+				top: 0;
+				right: 0;
+				bottom: 0;
+				pointer-events: none;
+			}
+			.images .item {
+				flex: 1;
+				position: relative;
+			}
+			.images .item paper-icon-button {
+				cursor: pointer;
+				pointer-events: all;
+				position: absolute;
+				z-index: 1;
+				color: #ffffff;
+				right: 0;
+			}
+			.images .item paper-icon-button:hover {
+				color: #e7e7e7;
+			}
+		</style>
+		<input id="focusinput" is="iron-input">
+		<input id="fileinput" type="file" multiple$="[[multiple]]" value="{{fileinputValue::change}}" />
+		<div class="images">
+			<template is="dom-repeat" items="{{fileList}}">
+				<div class="item">
+					<paper-icon-button icon="delete" on-click="_onTrashItem"></paper-icon-button>
+					<upload-image file="{{item}}" sizing="cover"></upload-image>
+				</div>
+			</template>
+		</div>
+	</template>
+	<script>
+		Polymer({
+			is: 'upload-area',
+			behaviors: [Polymer.PaperInputBehavior, Polymer.IronFormElementBehavior],
+			properties: {
+				multiple: {
+					type: Boolean,
+					value: false
+				},
+				fileinputValue: {
+					type: Object,
+					observer: '_onFileInputChange'
+				},
+				fileList: {
+					type: Array,
+					value: [],
+					observer: '_onFileListChange'
+				},
+				name: {
+					type: String,
+					value: "file"
+				},
+				action: {
+					type: String,
+					value: ""
+				},
+				value: {
+					type: Array,
+					notify: true,
+					value: []
+				}
+			},
+			listeners: {
+				'dblclick': '_onDblClick',
+				'paste': '_onPaste',
+				'drop': '_onDrop'
+			},
+
+			_onFileListChange: function(){
+				this.set('value',this.fileList);
+			},
+			/*
+			 * Handle classic input by input[file] tag
+			 */
+			_onDblClick: function(e){
+				this.$.fileinput.click();
+			},
+			_onFileInputChange: function(e){
+				for (var i = 0 ; i < this.$.fileinput.files.length ; i++) {
+					var item = this.$.fileinput.files[i];
+					this.appendFile(item);
+				}
+			},
+
+			/*
+			 * Handle input by drag'n'drop
+			 */
+			_onDrop: function(e){
+				for (var i = 0 ; i < e.dataTransfer.files.length ; i++) {
+					var item = e.dataTransfer.files[i];
+					this.appendFile(item);
+					if(!this.multiple) break;
+				}
+				e.preventDefault();
+			},
+
+			/*
+			 * Handle input by copy'n'paste
+			 */
+			_onPaste: function(e){
+				for (var i = 0 ; i < e.clipboardData.items.length ; i++) {
+					var item = e.clipboardData.items[i];
+					/*if (item.type.indexOf("text/plain") !== -1) {
+						item.getAsString(function(str){
+							console.log('upload url' + str);
+							this.appendURL(str);
+						});
+					}*/
+					if (item.type.indexOf("image") !== -1) {
+						this.appendFile(item.getAsFile());
+					}
+				}
+			},
+
+			/*
+			 * Building file list
+			 */
+			appendFile: function (file) {
+				if (file.type.indexOf("image") !== -1) {
+					if(!this.multiple) this.set('fileList',[]);
+					this.push('fileList', file);
+				}
+			},
+
+			_onTrashItem: function(e){
+				this.splice('fileList',e.model.index,1);
+				e.preventDefault();
+			},
+
+			/*
+			 * Sending data
+			 */
+			send: function () {
+				var xhr = new XMLHttpRequest();
+				var formdata;
+				var urlEncodedDataPairs = [];
+
+				xhr.upload.onprogress = function(e) {
+					var percentComplete = (e.loaded / e.total) * 100;
+					console.log("Uploaded: " + percentComplete + "%");
+				};
+				xhr.onload = function() {
+					if (xhr.status == 200) {
+						alert("Sucess! Upload completed.\n\n" + xhr.responseText);
+					} else {
+						alert("Error! Upload failed");
+					}
+				};
+				xhr.onerror = function() {
+					alert("Error! Upload failed. Can not connect to server.");
+				};
+				xhr.open("POST", "FileUploader", true);
+				if(typeof FormData !== 'undefined'){
+					formdata = new FormData();
+					for (var i = 0 ; i < this.fileList.length ; i++) {
+						formdata.append('uploadfile[]', this.fileList[i]);
+					}
+				}else{
+					formdata = "";
+					for (var i = 0 ; i < this.fileList.length ; i++) {
+						urlEncodedDataPairs.push(encodeURIComponent('uploadfile[]') + '=' + encodeURIComponent(this.fileList[i]));
+					}
+					XHR.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+					XHR.setRequestHeader('Content-Length', formdata.length);
+				}
+				xhr.send(formdata);
+			}
+
+		});
+	</script>
+</dom-module>

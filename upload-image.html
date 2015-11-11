@@ -1,0 +1,104 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-image/iron-image.html">
+
+<dom-module id="upload-image">
+	<template>
+		<style type="text/css">
+			iron-image {
+				width: 100%;
+				height: 100%;
+			}
+		</style>
+		<iron-image src="[[src]]"
+					prevent-load="{{preventLoad}}"
+					sizing="{{sizing}}"
+					position="{{position}}"
+					preload="{{preload}}"
+					placeholder="{{placeholder}}"
+					fade="{{fade}}"
+					loaded="{{loaded}}"
+					loading="{{loading}}"
+					width="{{width}}"
+					height="{{height}}"
+					requires-preload="{{requiresPreload}}"
+					can-load="{{canLoad}}"></iron-image>
+	</template>
+	<script>
+		Polymer({
+			is: 'upload-image',
+			properties: {
+				src: {
+					type: String,
+					readonly: true,
+					notify:true
+				},
+
+				file: {
+					type: Object,
+					observer: 'onFileChange'
+				},
+
+				/**
+				 * iron-image properties to pass through
+				 */
+				preventLoad: {
+					type: Boolean,
+					value: false
+				},
+				sizing: {
+					type: String,
+					value: null
+				},
+				position: {
+					type: String,
+					value: 'center'
+				},
+				preload: {
+					type: Boolean,
+					value: false
+				},
+				placeholder: {
+					type: String,
+					value: null
+				},
+				fade: {
+					type: Boolean,
+					value: false
+				},
+				loaded: {
+					notify: true,
+					type: Boolean,
+					value: false
+				},
+				loading: {
+					notify: true,
+					type: Boolean,
+					value: false
+				},
+				width: {
+					type: Number,
+					value: null
+				},
+				height: {
+					type: Number,
+					value: null
+				},
+				requiresPreload: {
+					type: Boolean
+				},
+				canLoad: {
+					type: Boolean
+				}
+
+			},
+
+			onFileChange: function(){
+				var reader = new FileReader();
+				reader.onloadend = function () {
+					this.src = reader.result;
+				}.bind(this);
+				reader.readAsDataURL(this.file);
+			}
+		});
+	</script>
+</dom-module>
